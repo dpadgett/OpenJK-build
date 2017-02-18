@@ -2,13 +2,19 @@
 FROM ubuntu:14.04
 MAINTAINER Dan Padgett <dumbledore3@gmail.com>
 
-RUN apt-get update
-RUN apt-get install -y cmake git build-essential libsdl2-dev libjpeg-dev libpng-dev zlib1g-dev
+RUN dpkg --add-architecture i386 && \
+  apt-get update && \
+  apt-get install -y cmake git gcc:i386 g++:i386 libsdl2-dev:i386 libjpeg-dev:i386 libpng-dev:i386 zlib1g-dev:i386
 
-RUN cd && \
-  git clone https://github.com/dpadgett/OpenJK.git && \
-  mkdir -p OpenJK/build && \
-  cd OpenJK/build && \
+WORKDIR /root
+
+RUN git clone https://github.com/dpadgett/OpenJK.git && \
+  mkdir -p OpenJK/build
+
+WORKDIR /root/OpenJK/build
+
+CMD \
+  sed -i 's/"^i.86$"/"^i.86$|^x86.64$"/' ../CMakeLists.txt && \
   cmake -D BuildMPEngine=OFF \
         -D BuildMPRdVanilla=OFF \
         -D BuildMPGame=OFF \
@@ -17,9 +23,8 @@ RUN cd && \
         -D BuildSPEngine=OFF \
         -D BuildSPGame=OFF \
         -D BuildSPRdVanilla=OFF \
+        -D CMAKE_C_FLAGS="-m32 -msse2" \
+        -D CMAKE_CXX_FLAGS="-m32 -msse2" \
         .. && \
-  make -j4
-
-WORKDIR /root/OpenJK/build
-
-CMD cp openjkded.x86_64 /out/.
+  make -j4 VERBOSE=1 && \
+  cp /root/OpenJK/build/openjkded.i386 /out/.
